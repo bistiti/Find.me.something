@@ -23,8 +23,13 @@ fourchette + une marge de négociation.
 
 Dans le panneau **« Connexion IA »** en haut de la page :
 
-1. Choisis le fournisseur : **Anthropic (Claude)**, **OpenAI (ChatGPT)**,
-   ou **Compatible OpenAI** (OpenRouter, Mistral, serveur local…).
+1. Choisis le fournisseur. **Un abonnement Claude Pro / ChatGPT Plus ne donne
+   PAS d'accès API** : l'API est facturée à part. Sans crédit, utilise une
+   **offre gratuite** (préréglées dans la liste) :
+   - **Google Gemini** — offre gratuite, endpoint compatible OpenAI.
+   - **OpenRouter** — modèles gratuits (suffixe `:free`).
+   - **Groq** — offre gratuite, rapide.
+   Ou **Anthropic / OpenAI** (payant), ou **Autre compatible OpenAI**.
 2. Renseigne le **modèle** (ex. `claude-sonnet-4-5`, `gpt-4o-mini`) et,
    pour le mode compatible, l'**URL de base** (ex. `https://openrouter.ai/api/v1`).
 3. Colle ta **clé API**, puis **Enregistrer** et **Tester**.

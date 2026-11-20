@@ -80,14 +80,17 @@
   <!-- CONNEXION IA -->
   <div class="card ai-card">
     <h2><span class="ai-dot" id="ai_dot"></span> Connexion IA</h2>
-    <p class="hint">Branche ton fournisseur pour activer : lecture d'annonce, analyse rédigée, proposition de code INSEE. Ta clé reste dans TON navigateur (localStorage), elle n'est jamais envoyée ailleurs qu'au fournisseur choisi.</p>
+    <p class="hint">Branche ton fournisseur pour activer : lecture d'annonce, analyse rédigée, code INSEE. Ta clé reste dans TON navigateur (localStorage), jamais envoyée ailleurs qu'au fournisseur. <strong>Pas de crédit API ?</strong> Un abonnement Claude/ChatGPT ne donne pas d'accès API. Utilise une offre gratuite : Google Gemini, OpenRouter (modèles <code>:free</code>) ou Groq — même fonctionnement, clé gratuite.</p>
     <div class="grid">
       <div class="field"><label>Fournisseur</label>
         <select id="ai_provider">
           <option value="">— choisir —</option>
-          <option value="anthropic">Anthropic (Claude)</option>
-          <option value="openai">OpenAI (ChatGPT)</option>
-          <option value="compat">Compatible OpenAI (OpenRouter, Mistral, local…)</option>
+          <option value="gemini">Google Gemini — gratuit</option>
+          <option value="openrouter">OpenRouter — modèles gratuits</option>
+          <option value="groq">Groq — gratuit</option>
+          <option value="anthropic">Anthropic (Claude) — payant</option>
+          <option value="openai">OpenAI (ChatGPT) — payant</option>
+          <option value="compat">Autre compatible OpenAI</option>
         </select></div>
       <div class="field"><label>Modèle</label><input type="text" id="ai_model" placeholder="ex. claude-sonnet-4-5 / gpt-4o-mini"></div>
       <div class="field" id="ai_base_wrap" style="display:none"><label>URL de base (compatible OpenAI)</label><input type="text" id="ai_base" placeholder="https://openrouter.ai/api/v1"></div>
@@ -306,16 +309,31 @@ async function aiComplete(text, {system, maxTokens=1200, imageDataUrl}={}){
     const j=await res.json(); return (j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"";
   }
 }
-$("ai_provider").addEventListener("change",()=>{ $("ai_base_wrap").style.display = $("ai_provider").value==="compat"?"block":"none"; });
+const AI_PRESETS={
+  gemini:{base:"https://generativelanguage.googleapis.com/v1beta/openai",model:"gemini-2.0-flash"},
+  openrouter:{base:"https://openrouter.ai/api/v1",model:""},
+  groq:{base:"https://api.groq.com/openai/v1",model:"llama-3.3-70b-versatile"}
+};
+function formCfg(){
+  let prov=$("ai_provider").value, base=$("ai_base").value.trim();
+  if(AI_PRESETS[prov]){ if(!base) base=AI_PRESETS[prov].base; prov="compat"; }
+  return {provider:prov,model:$("ai_model").value.trim(),base:base,key:$("ai_key").value.trim()};
+}
+$("ai_provider").addEventListener("change",()=>{
+  const p=$("ai_provider").value, isCompat=(p==="compat"||!!AI_PRESETS[p]);
+  $("ai_base_wrap").style.display=isCompat?"block":"none";
+  if(AI_PRESETS[p]){ if(!$("ai_base").value.trim())$("ai_base").value=AI_PRESETS[p].base;
+    if(!$("ai_model").value.trim()&&AI_PRESETS[p].model)$("ai_model").value=AI_PRESETS[p].model; }
+});
 $("ai_save").addEventListener("click",()=>{
-  const cfg={provider:$("ai_provider").value,model:$("ai_model").value.trim(),base:$("ai_base").value.trim(),key:$("ai_key").value.trim()};
+  const cfg=formCfg();
   if(!cfg.provider||!cfg.model||!cfg.key){ $("ai_status").textContent="Renseigne fournisseur, modèle et clé."; return; }
   try{ localStorage.setItem("estim06_ai",JSON.stringify(cfg)); $("ai_status").textContent="Configuration enregistrée (localement)."; }catch(e){ $("ai_status").textContent="Stockage local indisponible."; }
   refreshAiDot();
 });
 $("ai_clear").addEventListener("click",()=>{ try{localStorage.removeItem("estim06_ai");}catch(e){} $("ai_key").value=""; $("ai_status").textContent="Clé effacée."; refreshAiDot(); });
 $("ai_test").addEventListener("click",async()=>{
-  const cfg={provider:$("ai_provider").value,model:$("ai_model").value.trim(),base:$("ai_base").value.trim(),key:$("ai_key").value.trim()};
+  const cfg=formCfg();
   try{ localStorage.setItem("estim06_ai",JSON.stringify(cfg)); }catch(e){}
   refreshAiDot();
   $("ai_status").textContent="Test en cours…";
