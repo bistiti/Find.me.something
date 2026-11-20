@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estimation & négociation — Maison / Terrain (06)</title>
+<style>
+  :root{--bg:#0f1419;--panel:#1a2029;--panel2:#222a35;--line:#2e3a47;--txt:#e6edf3;--muted:#9aa7b4;
+    --accent:#4a9eff;--accent2:#2d7dd2;--ok:#39c07a;--warn:#f0a93b;--bad:#e5604a;--radius:12px;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;font-size:15px}
+  .wrap{max-width:900px;margin:0 auto;padding:20px 16px 80px}
+  header h1{font-size:1.45rem;margin:0 0 4px;letter-spacing:-.3px}
+  header p.sub{color:var(--muted);margin:0 0 6px;font-size:.92rem}
+  .disclaimer{background:#2a2113;border:1px solid #5a461d;color:#f0d9a8;padding:10px 12px;border-radius:10px;font-size:.84rem;margin:14px 0 6px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 18px;margin:16px 0}
+  .card h2{font-size:1.05rem;margin:0 0 2px;display:flex;align-items:center;gap:8px}
+  .card .hint{color:var(--muted);font-size:.82rem;margin:0 0 12px}
+  .num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--accent2);color:#fff;font-size:.78rem;font-weight:700;flex:none}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  label{display:block;font-size:.8rem;color:var(--muted);margin:0 0 4px}
+  input[type=number],input[type=text],input[type=password],select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px 10px;font-size:.95rem;font-family:inherit}
+  textarea{min-height:90px;resize:vertical;line-height:1.45}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  .field{margin-bottom:4px}
+  .range-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .suffix{position:relative}.suffix small{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.75rem;pointer-events:none}.suffix input{padding-right:40px}
+  .toggle-row{display:flex;align-items:center;gap:10px;margin:0 0 12px;cursor:pointer}.toggle-row input{width:18px;height:18px;accent-color:var(--accent)}.toggle-row span{font-size:.9rem;color:var(--txt)}
+  .checklist .item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;background:var(--panel2)}
+  .checklist .item .top{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+  .checklist .item .lbl{font-size:.9rem;font-weight:600}.checklist .item .desc{color:var(--muted);font-size:.8rem;margin-top:3px;max-width:560px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
+  .seg button{background:transparent;border:none;color:var(--muted);padding:6px 10px;font-size:.76rem;cursor:pointer}
+  .seg button.on-ok{background:var(--ok);color:#06241a}.seg button.on-warn{background:var(--warn);color:#2a1d04}.seg button.on-bad{background:var(--bad);color:#2a0f0a}
+  .flag{margin-top:8px;font-size:.8rem;padding:7px 9px;border-radius:7px;display:none}.flag.show{display:block}
+  .flag.warn{background:#3a2c10;color:#f0cf96;border:1px solid #6a5220}.flag.bad{background:#3a1713;color:#f0a99a;border:1px solid #6a2a20}
+  .method{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:var(--panel2)}
+  .method .mhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+  .method .mtitle{font-weight:600;font-size:.92rem}.method .mres{font-variant-numeric:tabular-nums;font-size:.9rem;color:var(--accent);font-weight:600;white-space:nowrap}
+  .method .mbody{margin-top:10px}.method.off .mbody{display:none}
+  .method .formula{color:var(--muted);font-size:.76rem;margin-top:8px;font-style:italic}
+  .result-box{background:linear-gradient(145deg,#15304d,#122235);border:1px solid #2d557f;border-radius:12px;padding:16px;margin-top:8px}
+  .result-box .big{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+  .result-box .lbl2{color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.5px}
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:4px}
+  .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .kpi .v{font-size:1.15rem;font-weight:700;font-variant-numeric:tabular-nums}.kpi .k{color:var(--muted);font-size:.74rem;margin-top:2px}
+  .kpi.pos .v{color:var(--ok)}.kpi.neg .v{color:var(--bad)}
+  .levier{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px solid var(--line)}.levier:last-child{border-bottom:none}
+  .levier input{width:17px;height:17px;margin-top:2px;accent-color:var(--accent)}.levier .lt{font-size:.85rem}.levier .ld{color:var(--muted);font-size:.76rem}
+  .synth{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;white-space:pre-wrap;font-size:.84rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;max-height:420px;overflow:auto}
+  .btn{background:var(--accent2);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:.88rem;cursor:pointer;font-weight:600}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}.btn.sm{padding:7px 12px;font-size:.8rem}.btn:disabled{opacity:.5;cursor:default}.btn:active{transform:translateY(1px)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .muted{color:var(--muted)}.small{font-size:.8rem}
+  .pill{display:inline-block;font-size:.72rem;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--muted);margin-left:6px}.pill.exp{border-color:#5a461d;color:#f0cf96}
+  .status{font-size:.8rem;margin-top:8px;min-height:1.1em;color:var(--muted)}
+  .photo-prev{max-width:100%;border-radius:8px;border:1px solid var(--line);margin-top:8px;display:none}
+  .auto-panel{border:1px dashed var(--accent2);border-radius:10px;padding:12px;margin:10px 0;background:#141c28}
+  .auto-panel h3{font-size:.9rem;margin:0 0 8px;display:flex;align-items:center;gap:6px}
+  .ai-card{border-color:#3a4c2e;background:#141c14}
+  .ai-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);margin-right:6px}
+  .ai-dot.on{background:var(--ok)}
+  .warnbox{background:#3a1713;border:1px solid #6a2a20;color:#f0a99a;padding:10px 12px;border-radius:8px;font-size:.8rem;margin-top:10px}
+  footer{color:var(--muted);font-size:.76rem;text-align:center;margin-top:30px;line-height:1.6}
+  @media(max-width:560px){.range-row{grid-template-columns:1fr 1fr}.result-box .big{font-size:1.25rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Estimation &amp; négociation — Maison / Terrain</h1>
+    <p class="sub">Version autonome (auto-hébergée) · Alpes-Maritimes (06) · DVF / PLU / PPR</p>
+  </header>
+
+  <div class="disclaimer">
+    <strong>Outil à saisie manuelle, avec assistance IA optionnelle.</strong> Il n'invente aucune donnée : tu entres les chiffres réels collectés. Les fonctions automatiques (lecture d'annonce, analyse rédigée, code INSEE) nécessitent de connecter ton IA ci-dessous. Le DVF est interrogé directement sur data.gouv.
+  </div>
+
+  <!-- CONNEXION IA -->
+  <div class="card ai-card">
+    <h2><span class="ai-dot" id="ai_dot"></span> Connexion IA</h2>
+    <p class="hint">Branche ton fournisseur pour activer : lecture d'annonce, analyse rédigée, proposition de code INSEE. Ta clé reste dans TON navigateur (localStorage), elle n'est jamais envoyée ailleurs qu'au fournisseur choisi.</p>
+    <div class="grid">
+      <div class="field"><label>Fournisseur</label>
+        <select id="ai_provider">
+          <option value="">— choisir —</option>
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI (ChatGPT)</option>
+          <option value="compat">Compatible OpenAI (OpenRouter, Mistral, local…)</option>
+        </select></div>
+      <div class="field"><label>Modèle</label><input type="text" id="ai_model" placeholder="ex. claude-sonnet-4-5 / gpt-4o-mini"></div>
+      <div class="field" id="ai_base_wrap" style="display:none"><label>URL de base (compatible OpenAI)</label><input type="text" id="ai_base" placeholder="https://openrouter.ai/api/v1"></div>
+      <div class="field"><label>Clé API</label><input type="password" id="ai_key" placeholder="collée ici, jamais dans le code"></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn sm" id="ai_save">Enregistrer</button>
+      <button class="btn sm ghost" id="ai_test">Tester</button>
+      <button class="btn sm ghost" id="ai_clear">Effacer la clé</button>
+    </div>
+    <div class="status" id="ai_status"></div>
+    <div class="warnbox">
+      <strong>Sécurité :</strong> ne colle JAMAIS ta clé dans le code source du dépôt GitHub. Saisis-la ici à l'usage. La page la garde en local sur cette machine/navigateur uniquement. Évite les ordinateurs partagés. Les appels directs navigateur exposent la clé à qui a accès à ce navigateur.
+    </div>
+  </div>
+
+  <!-- 1. FICHE -->
+  <div class="card">
+    <h2><span class="num">1</span> Fiche du bien</h2>
+    <p class="hint">Identité du bien et prix affiché. Renseigne ce que tu as ; le reste reste vide.</p>
+    <div class="auto-panel">
+      <h3>Annonce source <span class="pill">optionnel</span></h3>
+      <div class="field" style="margin-bottom:10px"><label>Lien de l'annonce (pour mémoire)</label><input type="text" id="annonce_url" placeholder="https://…"></div>
+      <p class="small muted" style="margin:0 0 10px">La récupération d'une annonce par lien n'est pas possible côté navigateur (anti-bot / CORS des sites). Colle la photo ou le texte ; ton IA les lit.</p>
+      <div class="grid">
+        <div class="field"><label>Photo de l'annonce</label><input type="file" id="photo_in" accept="image/*"></div>
+        <div class="field"><label>Texte de l'annonce</label><textarea id="annonce_txt" placeholder="Colle ici le texte de l'annonce…"></textarea></div>
+      </div>
+      <img id="photo_prev" class="photo-prev" alt="aperçu annonce">
+      <div class="toolbar">
+        <button class="btn sm" id="lireBtn">Lire l'annonce → pré-remplir (IA)</button>
+        <button class="btn sm ghost" id="photoClear">Retirer la photo</button>
+      </div>
+      <div class="status" id="lire_status"></div>
+    </div>
+    <div class="grid">
+      <div class="field"><label>Commune</label><input type="text" id="commune" placeholder="ex. La Trinité"></div>
+      <div class="field"><label>Code INSEE <button type="button" id="inseeBtn" class="btn sm ghost" style="padding:2px 8px;font-size:.72rem;margin-left:6px">Trouver (geo.api.gouv.fr)</button></label>
+        <input type="text" id="insee" placeholder="ex. 06149">
+        <select id="insee_choices" style="display:none;margin-top:6px"></select>
+        <div class="status" id="insee_status"></div></div>
+      <div class="field"><label>Type de bien</label>
+        <select id="type"><option>Terrain nu</option><option>Maison</option><option>Maison + terrain</option></select></div>
+      <div class="field suffix"><label>Prix affiché</label><input type="number" id="prix_affiche" placeholder="0"><small>€</small></div>
+      <div class="field suffix"><label>Surface terrain totale</label><input type="number" id="s_terrain" placeholder="0"><small>m²</small></div>
+      <div class="field suffix"><label>Dont surface constructible (U)</label><input type="number" id="s_constr" placeholder="0"><small>m²</small></div>
+      <div class="field suffix"><label>Dont surface N / A (agrément)</label><input type="number" id="s_na" placeholder="0"><small>m²</small></div>
+      <div class="field suffix"><label>Surface habitable (bâti)</label><input type="number" id="s_hab" placeholder="0"><small>m²</small></div>
+    </div>
+  </div>
+
+  <!-- 2. CHECKLIST -->
+  <div class="card">
+    <h2><span class="num">2</span> Checklist de vérification</h2>
+    <p class="hint">Les 9 points qui conditionnent la valeur. Un point « Problème » peut annuler une partie de l'estimation.</p>
+    <div class="checklist" id="checklist"></div>
+  </div>
+
+  <!-- 3. VALORISATION -->
+  <div class="card">
+    <h2><span class="num">3</span> Valorisation</h2>
+    <p class="hint">Jusqu'à 3 méthodes. Coche celles à inclure. On retient une fourchette, pas un chiffre unique.</p>
+    <div class="auto-panel">
+      <h3>Médianes DVF automatiques <span class="pill exp">direct data.gouv · expérimental</span></h3>
+      <p class="small muted" style="margin:0 0 8px">Interroge l'API Tabular de data.gouv (dépend du CORS de l'API). Sinon, saisis la médiane en méthode C.</p>
+      <div class="field" style="margin:0 0 8px;max-width:280px"><label>Étendue de l'échantillon</label>
+        <select id="dvf_scope">
+          <option value="recent">Rapide — année récente (2025)</option>
+          <option value="demi" selected>Demi — 2 ans (2024–2025)</option>
+          <option value="complet">Complet — 2021→2026</option>
+        </select></div>
+      <div class="toolbar" style="margin-top:0">
+        <button class="btn sm" id="dvfBtn">Récupérer les médianes DVF</button>
+        <button class="btn sm ghost" id="dvfStop" disabled>Stop</button>
+      </div>
+      <div class="status" id="dvf_status"></div>
+      <div id="dvf_out" class="grid" style="margin-top:10px;display:none">
+        <div class="kpi"><div class="v" id="dvf_maison">—</div><div class="k">Médiane maison vendue</div></div>
+        <div class="kpi"><div class="v" id="dvf_terrain">—</div><div class="k">Médiane €/m² terrain à bâtir</div></div>
+        <div class="kpi"><div class="v" id="dvf_n">—</div><div class="k">Ventes analysées</div></div>
+      </div>
+      <div class="toolbar" id="dvf_apply_row" style="display:none">
+        <button class="btn sm ghost" id="dvfApply">Reporter la médiane maison en méthode C</button>
+      </div>
+    </div>
+    <div class="method" id="mA">
+      <div class="mhead"><label class="toggle-row" style="margin:0"><input type="checkbox" class="minc" data-m="A" checked><span class="mtitle">A · Décomposition constructible / agrément</span></label><span class="mres" id="mA_res">—</span></div>
+      <div class="mbody"><div class="grid">
+        <div class="field"><label>€/m² charge foncière — constructible (bas / haut)</label><div class="range-row"><input type="number" id="A_cf_bas" placeholder="bas"><input type="number" id="A_cf_haut" placeholder="haut"></div></div>
+        <div class="field"><label>€/m² terrain agrément — N/A (bas / haut)</label><div class="range-row"><input type="number" id="A_ag_bas" value="5"><input type="number" id="A_ag_haut" value="15"></div></div>
+      </div><div class="formula">(surface constructible × €/m² constructible) + (surface N/A × €/m² agrément)</div></div>
+    </div>
+    <div class="method" id="mB">
+      <div class="mhead"><label class="toggle-row" style="margin:0"><input type="checkbox" class="minc" data-m="B"><span class="mtitle">B · Charge foncière (valeur du foncier seul)</span></label><span class="mres" id="mB_res">—</span></div>
+      <div class="mbody"><div class="grid">
+        <div class="field suffix"><label>Prix maison neuve du secteur</label><input type="number" id="B_neuf" placeholder="0"><small>€/m²</small></div>
+        <div class="field"><label>Taux charge foncière (bas / haut %)</label><div class="range-row"><input type="number" id="B_tx_bas" value="25"><input type="number" id="B_tx_haut" value="30"></div></div>
+      </div><div class="formula">surface habitable × prix neuf €/m² × [25–30 %] = valeur du foncier (hors bâti existant)</div></div>
+    </div>
+    <div class="method" id="mC">
+      <div class="mhead"><label class="toggle-row" style="margin:0"><input type="checkbox" class="minc" data-m="C" checked><span class="mtitle">C · Comparables / médianes DVF</span></label><span class="mres" id="mC_res">—</span></div>
+      <div class="mbody"><div class="field"><label>Valeur recalée sur ventes réelles DVF (bas / haut €)</label><div class="range-row"><input type="number" id="C_bas" placeholder="bas"><input type="number" id="C_haut" placeholder="haut"></div></div>
+      <div class="formula">médiane maison du secteur / €/m² des plots constructibles réellement vendus</div></div>
+    </div>
+    <div class="result-box" style="margin-top:14px">
+      <div class="lbl2">Fourchette de valorisation (après travaux)</div>
+      <div class="big" id="val_fourchette">—</div>
+      <div class="small muted" id="val_detail"></div>
+    </div>
+  </div>
+
+  <!-- 4. RÉNOVATION -->
+  <div class="card">
+    <h2><span class="num">4</span> Coût de rénovation <span class="pill">estimation indicative</span></h2>
+    <p class="hint">Pour un bien à rénover : déduit le coût des travaux de la valeur après travaux pour obtenir la valeur « en l'état ».</p>
+    <label class="toggle-row"><input type="checkbox" id="reno_on"><span>Le bien nécessite des travaux</span></label>
+    <div id="reno_block" style="display:none">
+      <div class="disclaimer" style="margin:4px 0 14px">Les €/m² ci-dessous sont des ordres de grandeur marché, <strong>à confirmer par devis d'artisans</strong>. Pas des chiffres contractuels.</div>
+      <div class="grid">
+        <div class="field suffix"><label>Surface à rénover</label><input type="number" id="reno_surf" placeholder="0"><small>m²</small></div>
+        <div class="field"><label>Niveau de travaux</label>
+          <select id="reno_niveau">
+            <option value="custom">Personnalisé</option>
+            <option value="400,700">Rafraîchissement (≈ 400–700 €/m²)</option>
+            <option value="900,1300" selected>Rénovation moyenne (≈ 900–1 300 €/m²)</option>
+            <option value="1500,2500">Rénovation lourde / complète (≈ 1 500–2 500 €/m²)</option>
+          </select></div>
+        <div class="field"><label>€/m² travaux (bas / haut)</label><div class="range-row"><input type="number" id="reno_bas" value="900"><input type="number" id="reno_haut" value="1300"></div></div>
+      </div>
+      <div class="result-box" style="margin-top:12px;background:linear-gradient(145deg,#2a2113,#1f1a10);border-color:#5a461d">
+        <div class="lbl2">Coût de rénovation estimé</div>
+        <div class="big" id="reno_total" style="color:#f0cf96">—</div>
+        <div class="field" style="margin-top:12px"><label>La fourchette de valorisation reflète :</label>
+          <select id="reno_base"><option value="apres">le bien RÉNOVÉ (après travaux) → on déduit les travaux</option><option value="etat">le bien EN L'ÉTAT → travaux = argument de négo</option></select></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. NÉGO -->
+  <div class="card">
+    <h2><span class="num">5</span> Valeur retenue &amp; marge de négociation</h2>
+    <p class="hint">Comparaison de la valeur « en l'état » retenue avec le prix affiché.</p>
+    <div class="result-box"><div class="lbl2">Valeur retenue (en l'état)</div><div class="big" id="val_etat">—</div><div class="small muted" id="val_etat_detail"></div></div>
+    <div class="kpi-row" style="margin-top:12px">
+      <div class="kpi" id="kpi_ecart"><div class="v" id="ecart_v">—</div><div class="k">Écart vs prix affiché</div></div>
+      <div class="kpi"><div class="v" id="cible_v">—</div><div class="k">Offre d'ouverture suggérée</div></div>
+      <div class="kpi"><div class="v" id="nego_v">—</div><div class="k">Marge de négo visée</div></div>
+    </div>
+    <h2 style="font-size:.95rem;margin:18px 0 2px">Leviers de négociation</h2>
+    <p class="hint">Arguments repérés. Ils renforcent la position mais ne modifient pas le calcul.</p>
+    <div id="leviers"></div>
+  </div>
+
+  <!-- 6. ANALYSE AUTO -->
+  <div class="card">
+    <h2><span class="num">6</span> Analyse automatique <span class="pill">premier jet</span></h2>
+    <p class="hint">Avis généré sur place à partir de tes seules saisies. À affiner.</p>
+    <div id="verdict" class="synth" style="font-family:inherit"></div>
+    <div class="toolbar">
+      <button class="btn sm" id="redBtn">Analyse rédigée (IA)</button>
+      <button class="btn sm ghost" id="briefBtn">Copier le brief</button>
+    </div>
+    <div class="status" id="red_status"></div>
+    <div id="red_out" class="synth" style="font-family:inherit;display:none;margin-top:10px"></div>
+  </div>
+
+  <!-- 7. SYNTHÈSE -->
+  <div class="card">
+    <h2><span class="num">7</span> Synthèse</h2>
+    <p class="hint">Récapitulatif copiable.</p>
+    <div class="synth" id="synth">—</div>
+    <div class="toolbar"><button class="btn" id="copyBtn">Copier la synthèse</button><button class="btn ghost" id="resetBtn">Réinitialiser</button></div>
+  </div>
+
+  <footer>
+    Outil d'aide à la décision. Ne remplace pas un certificat d'urbanisme, une étude de sol ni un devis d'artisan.<br>
+    Version autonome open-source. Clé API gérée localement, jamais stockée dans le dépôt.
+  </footer>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const eur=n=>(n==null||isNaN(n))?"—":Math.round(n).toLocaleString("fr-FR")+" €";
+const num=id=>{const v=parseFloat($(id).value);return isNaN(v)?null:v;};
+const median=arr=>{if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;};
+const norm=s=>(s||"").toString().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+function extractJSON(t){if(!t)return null;const m=t.match(/\{[\s\S]*\}/);if(!m)return null;try{return JSON.parse(m[0]);}catch(e){return null;}}
+
+/* ===================== Connexion IA (BYO key) ===================== */
+function aiCfg(){ try{ return JSON.parse(localStorage.getItem("estim06_ai")||"{}"); }catch(e){ return {}; } }
+function aiReady(){ const c=aiCfg(); return !!(c.provider&&c.key&&c.model); }
+function refreshAiDot(){ $("ai_dot").className="ai-dot"+(aiReady()?" on":""); }
+function fileToDataURL(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
+
+// messages: [{role:'user', text:'...'}], optional image dataURL. Returns text.
+async function aiComplete(text, {system, maxTokens=1200, imageDataUrl}={}){
+  const c=aiCfg();
+  if(!c.provider||!c.key||!c.model) throw new Error("IA non configurée (fournisseur, modèle, clé).");
+  if(c.provider==="anthropic"){
+    const content=[];
+    if(imageDataUrl){ const m=imageDataUrl.match(/^data:(.*?);base64,(.*)$/); if(m) content.push({type:"image",source:{type:"base64",media_type:m[1],data:m[2]}}); }
+    content.push({type:"text",text});
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{
+      "content-type":"application/json","x-api-key":c.key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:c.model,max_tokens:maxTokens,system:system||undefined,messages:[{role:"user",content}]})});
+    if(!res.ok) throw new Error("Anthropic "+res.status+" — "+(await res.text()).slice(0,180));
+    const j=await res.json(); return (j.content||[]).map(b=>b.text||"").join("");
+  } else {
+    const base=(c.provider==="openai")?"https://api.openai.com/v1":(c.base||"").replace(/\/$/,"");
+    if(!base) throw new Error("URL de base manquante pour le mode compatible.");
+    const userContent = imageDataUrl ? [{type:"text",text},{type:"image_url",image_url:{url:imageDataUrl}}] : text;
+    const res=await fetch(base+"/chat/completions",{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+c.key},
+      body:JSON.stringify({model:c.model,max_tokens:maxTokens,messages:[...(system?[{role:"system",content:system}]:[]),{role:"user",content:userContent}]})});
+    if(!res.ok) throw new Error("API "+res.status+" — "+(await res.text()).slice(0,180));
+    const j=await res.json(); return (j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"";
+  }
+}
+$("ai_provider").addEventListener("change",()=>{ $("ai_base_wrap").style.display = $("ai_provider").value==="compat"?"block":"none"; });
+$("ai_save").addEventListener("click",()=>{
+  const cfg={provider:$("ai_provider").value,model:$("ai_model").value.trim(),base:$("ai_base").value.trim(),key:$("ai_key").value.trim()};
+  if(!cfg.provider||!cfg.model||!cfg.key){ $("ai_status").textContent="Renseigne fournisseur, modèle et clé."; return; }
+  try{ localStorage.setItem("estim06_ai",JSON.stringify(cfg)); $("ai_status").textContent="Configuration enregistrée (localement)."; }catch(e){ $("ai_status").textContent="Stockage local indisponible."; }
+  refreshAiDot();
+});
+$("ai_clear").addEventListener("click",()=>{ try{localStorage.removeItem("estim06_ai");}catch(e){} $("ai_key").value=""; $("ai_status").textContent="Clé effacée."; refreshAiDot(); });
+$("ai_test").addEventListener("click",async()=>{
+  const cfg={provider:$("ai_provider").value,model:$("ai_model").value.trim(),base:$("ai_base").value.trim(),key:$("ai_key").value.trim()};
+  try{ localStorage.setItem("estim06_ai",JSON.stringify(cfg)); }catch(e){}
+  refreshAiDot();
+  $("ai_status").textContent="Test en cours…";
+  try{ const r=await aiComplete('Réponds juste: OK',{maxTokens:10}); $("ai_status").textContent="Réponse reçue : "+(r||"").slice(0,40); }
+  catch(e){ $("ai_status").textContent="Échec : "+((e&&e.message)||e); }
+});
+function loadAiIntoForm(){ const c=aiCfg(); if(c.provider){$("ai_provider").value=c.provider;$("ai_base_wrap").style.display=c.provider==="compat"?"block":"none";} if(c.model)$("ai_model").value=c.model; if(c.base)$("ai_base").value=c.base; if(c.key)$("ai_key").value=c.key; refreshAiDot(); }
+
+/* ===================== Checklist ===================== */
+const CHECKS=[
+  {id:"zonage",lbl:"1 · Zonage PLU par parcelle",desc:"Constructible (U) vs naturelle (N) / agricole (A).",bad:"Inconstructible : le €/m² de charge foncière ne s'applique pas à cette surface."},
+  {id:"ppr",lbl:"2 · Classement PPR de la parcelle",desc:"Rouge = inconstructible. Bleu = sous conditions + étude de sol.",bad:"PPR rouge : peut annuler toute la valeur constructible."},
+  {id:"cub",lbl:"3 · Certificat d'urbanisme opérationnel (CUb)",desc:"Surface de plancher, emprise, hauteur, reculs.",warn:"Sans CUb, la constructibilité annoncée n'est pas confirmée."},
+  {id:"viab",lbl:"4 · Viabilisation",desc:"Eau / élec / assainissement raccordables.",warn:"Non viabilisé : coût à intégrer."},
+  {id:"acces",lbl:"5 · Accès",desc:"Statut de la voie, servitude, accès engins.",warn:"Accès contraint ou servitude : impact coût."},
+  {id:"phys",lbl:"6 · Physique (pente / exposition)",desc:"Sud + vue mer = prime ; nord/est = décote.",warn:"Pente / exposition défavorable : décote."},
+  {id:"revplu",lbl:"7 · Révision de PLU en cours",desc:"Un projet arrêté peut reclasser une parcelle.",warn:"Révision PLU : risque de reclassement."},
+  {id:"coherence",lbl:"8 · Cohérence de prix",desc:"Comparer portails + agence. Baisses = levier.",warn:"Affiché >> DVF réalisé : levier de négo."},
+  {id:"cos",lbl:"9 · Notions juridiques obsolètes",desc:"Méfiance si constructibilité justifiée par le « COS ».",bad:"COS invoqué : supprimé par la loi ALUR (2014)."}
+];
+const checkState={};
+function buildChecklist(){
+  const c=$("checklist");
+  CHECKS.forEach(ch=>{ checkState[ch.id]="none";
+    const d=document.createElement("div"); d.className="item";
+    d.innerHTML=`<div class="top"><div><div class="lbl">${ch.lbl}</div><div class="desc">${ch.desc}</div></div>
+      <div class="seg" data-ch="${ch.id}"><button data-v="ok">OK</button><button data-v="warn">À vérif.</button><button data-v="bad">Problème</button></div></div>
+      <div class="flag" id="flag_${ch.id}"></div>`;
+    c.appendChild(d);
+  });
+  c.addEventListener("click",e=>{
+    const b=e.target.closest("button[data-v]"); if(!b)return;
+    const seg=b.parentElement,id=seg.dataset.ch,v=b.dataset.v;
+    checkState[id]=(checkState[id]===v)?"none":v;
+    seg.querySelectorAll("button").forEach(x=>x.className="");
+    if(checkState[id]!=="none") b.className="on-"+v;
+    const flag=$("flag_"+id),ch=CHECKS.find(x=>x.id===id); flag.className="flag";
+    if(checkState[id]==="bad"&&ch.bad){flag.textContent="⚠ "+ch.bad;flag.classList.add("show","bad");}
+    else if(checkState[id]==="warn"&&ch.warn){flag.textContent="• "+ch.warn;flag.classList.add("show","warn");}
+    else if(checkState[id]==="bad"&&ch.warn){flag.textContent="⚠ "+ch.warn;flag.classList.add("show","bad");}
+    recompute(); save();
+  });
+}
+
+/* ===================== Leviers ===================== */
+const LEVIERS=[
+  {id:"lv_baisse",t:"Baisse de prix déjà actée sur l'annonce",d:"Vendeur ouvert à la discussion."},
+  {id:"lv_ancre",t:"Vendeur sans ancre de prix récente (DVF)",d:"Détention ancienne / succession."},
+  {id:"lv_affiche",t:"Affiché nettement > DVF réalisé",d:"Écart affiché/réalisé = offre basse."},
+  {id:"lv_portails",t:"Incohérences inter-portails",d:"Prix ou surfaces divergents."},
+  {id:"lv_ppr",t:"Contrainte PPR / étude de sol à prévoir",d:"Coût et aléa à répercuter."},
+  {id:"lv_viab",t:"Viabilisation à la charge de l'acheteur",d:"Montant à déduire du prix."},
+  {id:"lv_marche",t:"Bien ancien sur le marché",d:"Durée d'exposition = pouvoir de négo."}
+];
+function buildLeviers(){
+  const c=$("leviers");
+  LEVIERS.forEach(l=>{ const d=document.createElement("label"); d.className="levier";
+    d.innerHTML=`<input type="checkbox" id="${l.id}"><div><div class="lt">${l.t}</div><div class="ld">${l.d}</div></div>`; c.appendChild(d); });
+  c.addEventListener("change",()=>{recompute();save();});
+}
+
+/* ===================== Reno ===================== */
+$("reno_on").addEventListener("change",()=>{ $("reno_block").style.display=$("reno_on").checked?"block":"none"; recompute(); save(); });
+$("reno_niveau").addEventListener("change",()=>{ const v=$("reno_niveau").value; if(v!=="custom"){const p=v.split(",");$("reno_bas").value=p[0];$("reno_haut").value=p[1];} recompute(); save(); });
+
+/* ===================== Photo + annonce (IA) ===================== */
+let currentPhotoBlob=null;
+$("photo_in").addEventListener("change",e=>{ const f=e.target.files&&e.target.files[0]; if(!f)return; currentPhotoBlob=f;
+  const url=URL.createObjectURL(f); const img=$("photo_prev"); img.src=url; img.style.display="block"; });
+$("photoClear").addEventListener("click",()=>{ currentPhotoBlob=null; $("photo_in").value=""; const img=$("photo_prev"); img.style.display="none"; img.src=""; });
+function setIf(id,val){ if(val!=null&&val!==""&&!isNaN(val)) $(id).value=val; }
+$("lireBtn").addEventListener("click",async()=>{
+  const st=$("lire_status");
+  if(!aiReady()){ st.textContent="Connecte d'abord ton IA (panneau en haut)."; return; }
+  const txt=$("annonce_txt").value.trim();
+  if(!currentPhotoBlob && !txt){ st.textContent="Ajoute une photo ou colle le texte."; return; }
+  st.textContent="Lecture en cours…";
+  const instr='Tu extrais des champs d\'une annonce immobilière française (06). Réponds UNIQUEMENT par un objet JSON strict, sans texte autour, clés : '+
+    '{"commune":string|null,"prix":number|null,"surface_terrain":number|null,"surface_constructible":number|null,"surface_na":number|null,"surface_habitable":number|null}. null si absent, n\'invente rien.';
+  try{
+    let imageDataUrl=null; if(currentPhotoBlob) imageDataUrl=await fileToDataURL(currentPhotoBlob);
+    const r=await aiComplete(instr+(txt?("\nTexte:\n"+txt):"\nLis la photo."),{maxTokens:400,imageDataUrl});
+    const j=extractJSON(r);
+    if(!j){ st.textContent="Pas pu extraire les champs. Saisis à la main."; return; }
+    if(j.commune)$("commune").value=j.commune;
+    setIf("prix_affiche",j.prix); setIf("s_terrain",j.surface_terrain); setIf("s_constr",j.surface_constructible);
+    setIf("s_na",j.surface_na); setIf("s_hab",j.surface_habitable);
+    recompute(); save(); st.textContent="Pré-rempli depuis l'annonce. Vérifie chaque valeur.";
+  }catch(e){ st.textContent="Lecture interrompue : "+((e&&e.message)||e); }
+});
+
+/* ===================== INSEE via geo.api.gouv.fr (direct) ===================== */
+$("inseeBtn").addEventListener("click",async()=>{
+  const st=$("insee_status"),sel=$("insee_choices"),nom=$("commune").value.trim();
+  if(!nom){ st.textContent="Renseigne d'abord la commune."; return; }
+  st.textContent="Recherche…"; sel.style.display="none"; sel.innerHTML="";
+  try{
+    const u="https://geo.api.gouv.fr/communes?nom="+encodeURIComponent(nom)+"&fields=nom,code,codesPostaux,departement&boost=population&limit=10";
+    const r=await fetch(u); if(!r.ok) throw new Error("HTTP "+r.status);
+    const arr=await r.json();
+    if(!arr.length){ st.textContent="Commune introuvable. Saisis le code à la main."; return; }
+    if(arr.length===1){ $("insee").value=arr[0].code; st.textContent=arr[0].nom+" → "+arr[0].code; recompute(); save(); return; }
+    sel.innerHTML='<option value="">— choisir la commune —</option>'+arr.map(c=>{const cp=(c.codesPostaux&&c.codesPostaux[0])||"",dep=(c.departement&&c.departement.code)||"";
+      return `<option value="${c.code}">${c.nom} (${cp}${dep?", dpt "+dep:""}) — ${c.code}</option>`;}).join("");
+    sel.style.display="block"; st.textContent=arr.length+" communes trouvées, choisis la bonne.";
+  }catch(e){ st.textContent="Récupération indisponible ("+((e&&e.message)||e)+"). Saisis le code à la main."; }
+});
+$("insee_choices").addEventListener("change",e=>{ if(e.target.value){ $("insee").value=e.target.value; $("insee_status").textContent="Code INSEE : "+e.target.value; e.target.style.display="none"; recompute(); save(); } });
+
+/* ===================== DVF via API Tabular data.gouv (direct) ===================== */
+const DVF_RES=[
+  {an:"2021-s2",id:"57ec266f-be5f-4daf-a9ce-b3af60391708"},
+  {an:"2022",id:"8e32f824-9382-40b3-b0f5-3997aa4c4351"},
+  {an:"2023",id:"c7cc1608-2e27-4754-8f59-54391ef363c6"},
+  {an:"2024",id:"e7421d40-c719-459c-a942-38d3a0a23fdf"},
+  {an:"2025",id:"b3a0c6d2-2a5a-45a3-81a8-9e860caf5e14"},
+  {an:"2026-s1",id:"4fa87df4-ac08-447f-8460-2daed16c2cfb"}
+];
+let dvfAbort=false,dvfMaisonMedian=null;
+$("dvfStop").addEventListener("click",()=>{ dvfAbort=true; $("dvf_status").textContent="Arrêt demandé…"; });
+async function dvfPage(rid,insee,page){
+  const u="https://tabular-api.data.gouv.fr/api/resources/"+rid+"/data/?code_commune__exact="+encodeURIComponent(insee)+"&page="+page+"&page_size=50";
+  const r=await fetch(u,{headers:{"accept":"application/json"}});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const j=await r.json();
+  const rows=j.data||j.results||(Array.isArray(j)?j:[]);
+  const total=(j.meta&&(j.meta.total_count||j.meta.total))||null;
+  return {rows,total};
+}
+$("dvfBtn").addEventListener("click",async()=>{
+  const st=$("dvf_status"),insee=$("insee").value.trim();
+  if(!insee){ st.textContent="Renseigne le code INSEE d'abord."; return; }
+  const scope=$("dvf_scope").value;
+  let resList=DVF_RES,cap=40;
+  if(scope==="recent"){ resList=DVF_RES.filter(r=>r.an==="2025"); cap=12; }
+  else if(scope==="demi"){ resList=DVF_RES.filter(r=>r.an==="2024"||r.an==="2025"); cap=24; }
+  dvfAbort=false; $("dvfBtn").disabled=true; $("dvfStop").disabled=false;
+  const all=[]; let firstErr=null;
+  try{
+    for(const res of resList){
+      if(dvfAbort) break;
+      let page=1,got=0,total=null;
+      do{
+        if(dvfAbort) break;
+        st.textContent="Lecture "+res.an+" — page "+page+"…";
+        let p; try{ p=await dvfPage(res.id,insee,page); }catch(e){ firstErr=firstErr||e; break; }
+        if(p.total!=null) total=p.total;
+        p.rows.forEach(x=>all.push(x)); got=p.rows.length; page++;
+        if(total!=null && (page-1)*50>=total) break;
+      }while(got>=50 && page<=cap);
+    }
+  }finally{ $("dvfBtn").disabled=false; $("dvfStop").disabled=true; }
+  if(!all.length){ st.textContent=firstErr?("Échec API Tabular ("+((firstErr&&firstErr.message)||firstErr)+"). Souvent un blocage CORS : saisis la médiane en méthode C."):"Aucune donnée."; return; }
+  const mut={};
+  all.forEach(x=>{ const id=x.id_mutation; if(!id)return; if(norm(x.nature_mutation)!=="vente")return;
+    const m=(mut[id]=mut[id]||{vf:parseFloat(x.valeur_fonciere)||null,types:new Set(),terr:0,hasBati:false,batir:false});
+    m.types.add(x.type_local||"");
+    if(x.type_local==="Maison"||x.type_local==="Appartement") m.hasBati=true;
+    if(norm(x.nature_culture).includes("terrains a batir")){ m.terr+=parseFloat(x.surface_terrain)||0; m.batir=true; }
+  });
+  const maisons=[],terrains=[];
+  Object.values(mut).forEach(m=>{ if(!m.vf)return; const t=[...m.types].filter(Boolean);
+    if(t.length>0 && t.every(x=>x==="Maison"||x==="Dépendance") && t.includes("Maison")) maisons.push(m.vf);
+    if(m.batir && !m.hasBati && m.terr>0) terrains.push(m.vf/m.terr);
+  });
+  dvfMaisonMedian=median(maisons); const terrMed=median(terrains);
+  $("dvf_out").style.display="grid";
+  $("dvf_maison").textContent=dvfMaisonMedian!=null?eur(dvfMaisonMedian):"— (0 maison pure)";
+  $("dvf_terrain").textContent=terrMed!=null?Math.round(terrMed).toLocaleString("fr-FR")+" €/m²":"— (0 terrain à bâtir)";
+  $("dvf_n").textContent=maisons.length+" maisons · "+terrains.length+" terrains";
+  $("dvf_apply_row").style.display=dvfMaisonMedian!=null?"flex":"none";
+  st.textContent="Terminé. "+Object.keys(mut).length+" ventes groupées.";
+});
+$("dvfApply").addEventListener("click",()=>{ if(dvfMaisonMedian==null)return;
+  $("mC").querySelector(".minc").checked=true; $("C_bas").value=Math.round(dvfMaisonMedian*0.95); $("C_haut").value=Math.round(dvfMaisonMedian*1.05);
+  recompute(); save(); $("dvf_status").textContent="Médiane reportée en méthode C (±5 %)."; });
+
+/* ===================== Core compute ===================== */
+function methodA(){ if(!$("mA").querySelector(".minc").checked)return null;
+  const sc=num("s_constr")||0,sna=num("s_na")||0,cfb=num("A_cf_bas"),cfh=num("A_cf_haut"),agb=num("A_ag_bas")||0,agh=num("A_ag_haut")||0;
+  if(cfb==null&&cfh==null)return null;
+  const bas=(sc*(cfb||cfh||0))+(sna*agb),haut=(sc*(cfh||cfb||0))+(sna*agh); return {bas:Math.min(bas,haut),haut:Math.max(bas,haut)}; }
+function methodB(){ if(!$("mB").querySelector(".minc").checked)return null;
+  const sh=num("s_hab"),neuf=num("B_neuf"),tb=num("B_tx_bas"),th=num("B_tx_haut"); if(sh==null||neuf==null)return null;
+  const v=sh*neuf,bas=v*((tb||25)/100),haut=v*((th||30)/100); return {bas:Math.min(bas,haut),haut:Math.max(bas,haut)}; }
+function methodC(){ if(!$("mC").querySelector(".minc").checked)return null;
+  const b=num("C_bas"),h=num("C_haut"); if(b==null&&h==null)return null;
+  const bas=b!=null?b:h,haut=h!=null?h:b; return {bas:Math.min(bas,haut),haut:Math.max(bas,haut)}; }
+function renoCost(){ if(!$("reno_on").checked)return null;
+  const s=num("reno_surf"),b=num("reno_bas"),h=num("reno_haut"); if(s==null||(b==null&&h==null))return null;
+  const bas=s*(b!=null?b:h),haut=s*(h!=null?h:b); return {bas:Math.min(bas,haut),haut:Math.max(bas,haut)}; }
+
+function recompute(){
+  const A=methodA(),B=methodB(),C=methodC();
+  $("mA_res").textContent=A?`${eur(A.bas)} – ${eur(A.haut)}`:"—";
+  $("mB_res").textContent=B?`${eur(B.bas)} – ${eur(B.haut)}`:"—";
+  $("mC_res").textContent=C?`${eur(C.bas)} – ${eur(C.haut)}`:"—";
+  document.querySelectorAll(".method").forEach(m=>m.classList.toggle("off",!m.querySelector(".minc").checked));
+  const inc=[A,B,C].filter(Boolean); let valBas=null,valHaut=null,names=[];
+  if(inc.length){ valBas=Math.min(...inc.map(x=>x.bas)); valHaut=Math.max(...inc.map(x=>x.haut)); if(A)names.push("A");if(B)names.push("B");if(C)names.push("C"); }
+  $("val_fourchette").textContent=valBas!=null?`${eur(valBas)} – ${eur(valHaut)}`:"—";
+  $("val_detail").textContent=valBas!=null?`Méthodes : ${names.join(", ")} · amplitude ${eur(valHaut-valBas)}`:"Renseigne au moins une méthode.";
+  const R=renoCost(); $("reno_total").textContent=R?`${eur(R.bas)} – ${eur(R.haut)}`:"—";
+  let etatBas=valBas,etatHaut=valHaut,note="";
+  if(valBas!=null){ if(R&&$("reno_base").value==="apres"){ etatBas=valBas-R.haut; etatHaut=valHaut-R.bas; note=`Après déduction des travaux (${eur(R.bas)}–${eur(R.haut)}).`; }
+    else if(R){ note="Valorisation déjà en l'état ; travaux = argument de négo."; } else { note="Pas de travaux renseignés."; } }
+  $("val_etat").textContent=etatBas!=null?`${eur(etatBas)} – ${eur(etatHaut)}`:"—"; $("val_etat_detail").textContent=note;
+  const prix=num("prix_affiche"),kE=$("kpi_ecart");
+  if(prix!=null&&etatHaut!=null){
+    const eurs=n=>(n>=0?"+":"")+eur(n);
+    $("ecart_v").textContent=`${eurs(prix-etatHaut)} à ${eurs(prix-etatBas)}`; kE.className="kpi "+((prix-etatBas)>0?"neg":"pos");
+    const cible=Math.max(0,Math.min(prix,etatBas)*0.95); $("cible_v").textContent=eur(cible);
+    const nB=Math.max(0,((prix-Math.min(prix,etatHaut))/prix)*100),nH=((prix-cible)/prix)*100; $("nego_v").textContent=`${nB.toFixed(0)} – ${nH.toFixed(0)} %`;
+  } else { $("ecart_v").textContent="—"; $("cible_v").textContent="—"; $("nego_v").textContent="—"; kE.className="kpi"; }
+  const dd={A,B,C,R,valBas,valHaut,etatBas,etatHaut,prix,names};
+  try{ renderVerdict(dd); }catch(e){ $("verdict").textContent="Analyse indisponible : "+((e&&e.message)||e); }
+  try{ buildSynth(dd); }catch(e){}
+}
+function pctOf(a,b){ return b?((a/b)*100):0; }
+function renderVerdict(d){
+  const L=[],prix=d.prix,miss=[];
+  if(prix==null)miss.push("prix affiché"); if(d.valBas==null)miss.push("une méthode de valorisation");
+  if(num("s_terrain")==null&&num("s_hab")==null)miss.push("surfaces");
+  if(prix!=null&&d.etatBas!=null){
+    if(prix>d.etatHaut){ const o1=prix-d.etatHaut,o2=prix-d.etatBas;
+      L.push(`Positionnement : prix AU-DESSUS de la fourchette en l'état, de ${eur(o1)} à ${eur(o2)} (+${pctOf(o1,d.etatHaut).toFixed(0)} à +${pctOf(o2,d.etatBas).toFixed(0)} %). Surévalué sur cette base.`); }
+    else if(prix>=d.etatBas){ L.push(`Positionnement : prix DANS la fourchette (${eur(d.etatBas)} – ${eur(d.etatHaut)}). Cohérent ; négo surtout via les leviers.`); }
+    else { L.push(`Positionnement : prix SOUS la fourchette basse (${eur(d.etatBas)}). Chercher ce qui l'explique (PPR, accès, servitude, urgence vendeur).`); }
+    const cibleV=Math.max(0,Math.min(prix,d.etatBas)*0.95);
+    if(prix<d.etatBas) L.push(`Offre : prix déjà SOUS la valeur estimée ; ouvrir vers ${eur(cibleV)} (remise d'usage). L'enjeu est de sécuriser permis, viabilisation et PPR.`);
+    else L.push(`Offre : ouvrir vers ${eur(cibleV)}, viser la fourchette ${eur(d.etatBas)} – ${eur(d.etatHaut)}.`);
+  } else { L.push("Positionnement : indéterminé tant que prix et une méthode de valorisation ne sont pas renseignés."); }
+  const probs=CHECKS.filter(c=>checkState[c.id]==="bad"),warns=CHECKS.filter(c=>checkState[c.id]==="warn");
+  if(probs.length) L.push("⚠ Bloquants : "+probs.map(c=>c.lbl.replace(/^\d+ · /,"")).join(" ; ")+". La part constructible peut tomber.");
+  if(warns.length) L.push("À vérifier : "+warns.map(c=>c.lbl.replace(/^\d+ · /,"")).join(" ; ")+".");
+  const lev=LEVIERS.filter(l=>$(l.id)&&$(l.id).checked);
+  if(lev.length) L.push("Leviers : "+lev.map(l=>l.t).join(" ; ")+".");
+  if(d.R) L.push(`Travaux estimés ${eur(d.R.bas)} – ${eur(d.R.haut)} (indicatif, devis requis).`);
+  if(miss.length) L.push("Fiabilité limitée tant qu'il manque : "+miss.join(", ")+".");
+  $("verdict").textContent=(prix!=null||d.valBas!=null)?L.join("\n\n"):"Renseigne au moins le prix et une méthode de valorisation.";
+}
+$("redBtn").addEventListener("click",async()=>{
+  const st=$("red_status");
+  if(!aiReady()){ st.textContent="Connecte d'abord ton IA (panneau en haut). Le premier jet ci-dessus reste valable."; return; }
+  st.textContent="Rédaction en cours…";
+  const prompt="Tu es expert en négociation d'achat immobilier, côté acheteur (06). À partir UNIQUEMENT des données ci-dessous, rédige un avis en 4 points courts : 1) positionnement du prix, 2) points de vigilance, 3) stratégie et montant d'offre, 4) arguments. N'invente aucune donnée externe, signale ce qui manque.\n\nDonnées :\n"+$("synth").textContent;
+  try{ const r=await aiComplete(prompt,{maxTokens:1200}); $("red_out").style.display="block"; $("red_out").textContent=r||"(réponse vide)"; st.textContent="Rédigé à partir de tes seules saisies. Vérifie avant usage."; }
+  catch(e){ st.textContent="Rédaction interrompue : "+((e&&e.message)||e); }
+});
+$("briefBtn").addEventListener("click",()=>{
+  const url=$("annonce_url").value.trim();
+  const brief="Analyse ce bien pour une négociation côté acheteur (06). Récupère le DVF réel, le PPR et le zonage PLU.\n\n"+(url?("Lien annonce : "+url+"\n\n"):"")+$("synth").textContent;
+  navigator.clipboard.writeText(brief).then(()=>{ $("briefBtn").textContent="Brief copié ✓"; setTimeout(()=>$("briefBtn").textContent="Copier le brief",1600); }).catch(()=>{});
+});
+
+function buildSynth(d){
+  const L=[];
+  L.push("ESTIMATION / NÉGOCIATION — "+($("commune").value||"commune ?")+" ("+($("insee").value||"INSEE ?")+")");
+  L.push("Type : "+$("type").value+" · Prix affiché : "+($("prix_affiche").value?eur(num("prix_affiche")):"—"));
+  L.push("Surfaces : terrain "+($("s_terrain").value||"—")+" m² (constr. "+($("s_constr").value||"—")+" / N-A "+($("s_na").value||"—")+") · habitable "+($("s_hab").value||"—")+" m²");
+  L.push("");
+  const probs=CHECKS.filter(c=>checkState[c.id]==="bad"),warns=CHECKS.filter(c=>checkState[c.id]==="warn");
+  if(probs.length){L.push("POINTS BLOQUANTS :");probs.forEach(c=>L.push("  ✗ "+c.lbl));}
+  if(warns.length){L.push("À VÉRIFIER :");warns.forEach(c=>L.push("  • "+c.lbl));}
+  if(probs.length||warns.length)L.push("");
+  L.push("VALORISATION (après travaux) :");
+  if(d.A)L.push("  A décomposition : "+eur(d.A.bas)+" – "+eur(d.A.haut));
+  if(d.B)L.push("  B charge foncière : "+eur(d.B.bas)+" – "+eur(d.B.haut));
+  if(d.C)L.push("  C comparables DVF : "+eur(d.C.bas)+" – "+eur(d.C.haut));
+  L.push("  → Fourchette : "+(d.valBas!=null?eur(d.valBas)+" – "+eur(d.valHaut):"—"));
+  if(d.R){L.push("");L.push("RÉNOVATION (indicatif) : "+eur(d.R.bas)+" – "+eur(d.R.haut));}
+  L.push("");
+  L.push("VALEUR RETENUE EN L'ÉTAT : "+(d.etatBas!=null?eur(d.etatBas)+" – "+eur(d.etatHaut):"—"));
+  if(d.prix!=null&&d.etatHaut!=null){ L.push("Écart vs affiché : "+(d.prix-d.etatHaut>=0?"+":"")+eur(d.prix-d.etatHaut)+" à "+(d.prix-d.etatBas>=0?"+":"")+eur(d.prix-d.etatBas));
+    L.push("Offre d'ouverture suggérée : "+eur(Math.max(0,Math.min(d.prix,d.etatBas)*0.95))); }
+  const lev=LEVIERS.filter(l=>$(l.id)&&$(l.id).checked);
+  if(lev.length){L.push("");L.push("LEVIERS :");lev.forEach(l=>L.push("  - "+l.t));}
+  L.push(""); L.push("Rappel : aide à la décision ; CU, PPR, étude de sol et devis à confirmer.");
+  $("synth").textContent=L.join("\n");
+}
+
+/* ===================== Persistence ===================== */
+const FIELDS=["commune","insee","type","prix_affiche","s_terrain","s_constr","s_na","s_hab","annonce_txt","annonce_url",
+  "A_cf_bas","A_cf_haut","A_ag_bas","A_ag_haut","B_neuf","B_tx_bas","B_tx_haut","C_bas","C_haut","reno_surf","reno_niveau","reno_bas","reno_haut","reno_base"];
+function save(){ try{ const o={f:{},inc:{},chk:checkState,lev:{},reno:$("reno_on").checked};
+  FIELDS.forEach(id=>o.f[id]=$(id).value); document.querySelectorAll(".minc").forEach(c=>o.inc[c.dataset.m]=c.checked);
+  LEVIERS.forEach(l=>o.lev[l.id]=$(l.id).checked); localStorage.setItem("estim06",JSON.stringify(o)); }catch(e){} }
+function applyState(o){ if(!o)return;
+  FIELDS.forEach(id=>{if(o.f&&o.f[id]!=null)$(id).value=o.f[id];});
+  if(o.inc)document.querySelectorAll(".minc").forEach(c=>{if(o.inc[c.dataset.m]!=null)c.checked=o.inc[c.dataset.m];});
+  if(o.reno){$("reno_on").checked=true;$("reno_block").style.display="block";}
+  if(o.lev)LEVIERS.forEach(l=>{if(o.lev[l.id])$(l.id).checked=true;});
+  if(o.chk)Object.keys(o.chk).forEach(id=>{ const v=o.chk[id]; if(v&&v!=="none"){checkState[id]=v;
+    const seg=document.querySelector(`.seg[data-ch="${id}"]`); if(seg){const b=seg.querySelector(`button[data-v="${v}"]`);if(b)b.className="on-"+v;}
+    const ch=CHECKS.find(x=>x.id===id),flag=$("flag_"+id);
+    if(flag&&v==="bad"&&ch.bad){flag.textContent="⚠ "+ch.bad;flag.className="flag show bad";}
+    else if(flag&&v==="warn"&&ch.warn){flag.textContent="• "+ch.warn;flag.className="flag show warn";} } });
+}
+function readHash(){ try{ const m=(location.hash||"").match(/[#&]d=([^&]+)/); if(!m)return null;
+  let b64=decodeURIComponent(m[1]),json; try{ json=decodeURIComponent(escape(atob(b64))); }catch(e){ json=atob(b64); } return JSON.parse(json); }catch(e){ return null; } }
+function load(){ try{ applyState(JSON.parse(localStorage.getItem("estim06")||"null")); }catch(e){}
+  const h=readHash(); if(h){ applyState(h); try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} save(); } }
+
+/* ===================== Wire up ===================== */
+buildChecklist(); buildLeviers(); load(); loadAiIntoForm();
+document.querySelectorAll("input,select,textarea").forEach(el=>el.addEventListener("input",()=>{recompute();save();}));
+$("copyBtn").addEventListener("click",()=>{ navigator.clipboard.writeText($("synth").textContent).then(()=>{ $("copyBtn").textContent="Copié ✓"; setTimeout(()=>$("copyBtn").textContent="Copier la synthèse",1500); }).catch(()=>{}); });
+$("resetBtn").addEventListener("click",()=>{ if(confirm("Effacer toutes les saisies ? (la config IA est conservée)")){ try{localStorage.removeItem("estim06");}catch(e){} location.reload(); } });
+recompute();
+</script>
+</body>
+</html>
